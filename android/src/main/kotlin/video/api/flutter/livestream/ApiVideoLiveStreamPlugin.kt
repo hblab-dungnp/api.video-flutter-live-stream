@@ -15,7 +15,6 @@ class ApiVideoLiveStreamPlugin : FlutterPlugin, ActivityAware {
             methodCallHandlerImpl = MethodCallHandlerImpl(
                 binding.applicationContext,
                 binding.binaryMessenger,
-                this,
                 binding.textureRegistry
             ).apply {
                 startListening()

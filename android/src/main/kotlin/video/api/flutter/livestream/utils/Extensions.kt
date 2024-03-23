@@ -1,42 +1,44 @@
 package video.api.flutter.livestream.utils
 
 import android.util.Size
-import io.github.thibaultbee.streampack.data.AudioConfig
-import io.github.thibaultbee.streampack.data.VideoConfig
+import com.pedro.encoder.input.video.CameraHelper
+import video.api.flutter.livestream.CameraNativeView
 
-
-fun Map<String, Any>.toVideoConfig(): VideoConfig {
-    return VideoConfig(
-        startBitrate = this["bitrate"] as Int,
-        resolution = (this["resolution"] as String).toResolution(),
-        fps = this["fps"] as Int
-    )
-}
-
-fun Map<String, Any>.toAudioConfig(): AudioConfig {
-    return AudioConfig(
-        startBitrate = this["bitrate"] as Int,
-        sampleRate = this["sampleRate"] as Int,
-        channelConfig = AudioConfig.getChannelConfig(
-            if (this["channel"] == "stereo") {
-                2
-            } else {
-                1
-            }
-        ),
-        enableNoiseSuppressor = this["enableNoiseSuppressor"] as Boolean,
-        enableEchoCanceler = this["enableEchoCanceler"] as Boolean
-    )
-}
-
-fun String.toResolution(): Size {
+fun CameraNativeView.ResolutionPreset.toResolution(): Size {
     return when (this) {
-        "240p" -> Size(426, 240)
-        "360p" -> Size(640, 360)
-        "480p" -> Size(854, 480)
-        "720p" -> Size(1280, 720)
-        "1080p" -> Size(1920, 1080)
+        CameraNativeView.ResolutionPreset.low -> Size(426, 240)
+        CameraNativeView.ResolutionPreset.medium -> Size(640, 360)
+        CameraNativeView.ResolutionPreset.high -> Size(854, 480)
+        CameraNativeView.ResolutionPreset.veryHigh -> Size(1280, 720)
+        CameraNativeView.ResolutionPreset.ultraHigh -> Size(1920, 1080)
         else -> throw IllegalArgumentException("Unknown resolution: $this")
+    }
+}
+
+fun String.toPreset(): CameraNativeView.ResolutionPreset {
+    return when (this) {
+        "240p" -> CameraNativeView.ResolutionPreset.low
+        "360p" -> CameraNativeView.ResolutionPreset.medium
+        "480p" -> CameraNativeView.ResolutionPreset.high
+        "720p" -> CameraNativeView.ResolutionPreset.veryHigh
+        "1080p" -> CameraNativeView.ResolutionPreset.ultraHigh
+        else -> throw IllegalArgumentException("Unknown preset: $this")
+    }
+}
+
+fun CameraHelper.Facing.toKey(): String {
+    return when (this) {
+        CameraHelper.Facing.FRONT -> "front"
+        CameraHelper.Facing.BACK -> "back"
+        else -> throw IllegalArgumentException("Invalid camera position for camera $this")
+    }
+}
+
+fun String.toFacing(): CameraHelper.Facing {
+    return when (this) {
+         "front" -> CameraHelper.Facing.FRONT
+         "back" -> CameraHelper.Facing.BACK
+        else -> throw IllegalArgumentException("Invalid camera position for camera $this")
     }
 }
 

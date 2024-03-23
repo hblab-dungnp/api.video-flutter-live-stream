@@ -83,6 +83,11 @@ abstract class ApiVideoLiveStreamPlatform extends PlatformInterface {
     throw UnimplementedError('getVideoSize() has not been implemented.');
   }
 
+  Future<void> setListenToOrientationChange(bool listenToOrientationChange) {
+    throw UnimplementedError(
+        'setListenToOrientationChange() has not been implemented.');
+  }
+
   /// Returns a Stream of [LiveStreamingEvent]s.
   Stream<LiveStreamingEvent> liveStreamingEventsFor(int textureId) {
     throw UnimplementedError(

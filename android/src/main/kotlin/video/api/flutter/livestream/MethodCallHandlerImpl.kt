@@ -10,20 +10,20 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.view.TextureRegistry
 import video.api.flutter.livestream.utils.addTrailingSlashIfNeeded
-import video.api.flutter.livestream.utils.toAudioConfig
-import video.api.flutter.livestream.utils.toVideoConfig
+import video.api.flutter.livestream.utils.toFacing
+import video.api.flutter.livestream.utils.toKey
+import video.api.flutter.livestream.utils.toPreset
 
 class MethodCallHandlerImpl(
     private val context: Context,
     messenger: BinaryMessenger,
-    private val permissionsManager: PermissionsManager,
     private val textureRegistry: TextureRegistry
 ) : MethodChannel.MethodCallHandler {
     private val methodChannel = MethodChannel(messenger, METHOD_CHANNEL_NAME)
     private val eventChannel = EventChannel(messenger, EVENT_CHANNEL_NAME)
     private var eventSink: EventChannel.EventSink? = null
 
-    private var flutterView: FlutterLiveStreamView? = null
+    private var flutterView: CameraNativeView? = null
 
     fun startListening() {
         methodChannel.setMethodCallHandler(this)
@@ -48,17 +48,14 @@ class MethodCallHandlerImpl(
         when (call.method) {
             "create" -> {
                 try {
-                    flutterView?.dispose()
-                    flutterView = FlutterLiveStreamView(
-                        context,
-                        textureRegistry,
-                        permissionsManager,
-                        { sendConnected() },
-                        { sendDisconnected() },
-                        { sendConnectionFailed(it) },
-                        { sendError(it) },
-                        { sendVideoSizeChanged(it) }
-                    )
+                    flutterView =
+                        CameraNativeView(
+                            context,
+                            textureRegistry,
+                            preset = CameraNativeView.ResolutionPreset.low,
+                            onVideoSizeChanged = { sendVideoSizeChanged(it) },
+                            onDisconnected = { sendDisconnected() },
+                        )
                     result.success(mapOf("textureId" to flutterView!!.textureId))
                 } catch (e: Exception) {
                     result.error("failed_to_create_live_stream", e.message, null)
@@ -66,24 +63,16 @@ class MethodCallHandlerImpl(
             }
 
             "dispose" -> {
-                flutterView?.dispose()
                 flutterView = null
             }
 
             "setVideoConfig" -> {
                 try {
                     @Suppress("UNCHECKED_CAST")
-                    val videoConfig = (call.arguments as Map<String, Any>).toVideoConfig()
-                    flutterView!!.setVideoConfig(
-                        videoConfig,
-                        { result.success(null) },
-                        {
-                            result.error(
-                                "failed_to_set_video_config",
-                                it.message,
-                                null
-                            )
-                        })
+                    val videoConfig = (call.arguments as Map<String, Any>)
+                    val preset = (videoConfig["resolution"] as String).toPreset()
+                    flutterView!!.setPreset(preset)
+                    result.success(null)
                 } catch (e: Exception) {
                     result.error("failed_to_set_video_config", e.message, null)
                 }
@@ -92,17 +81,9 @@ class MethodCallHandlerImpl(
             "setAudioConfig" -> {
                 try {
                     @Suppress("UNCHECKED_CAST")
-                    val audioConfig = (call.arguments as Map<String, Any>).toAudioConfig()
-                    flutterView!!.setAudioConfig(
-                        audioConfig,
-                        { result.success(null) },
-                        {
-                            result.error(
-                                "failed_to_set_audio_config",
-                                it.message,
-                                null
-                            )
-                        })
+                    val audioConfig = (call.arguments as Map<String, Any>)
+                    flutterView!!.setAudioBitrate(audioConfig["bitrate"] as Int)
+                    result.success(null)
                 } catch (e: Exception) {
                     result.error("failed_to_set_audio_config", e.message, null)
                 }
@@ -110,15 +91,8 @@ class MethodCallHandlerImpl(
 
             "startPreview" -> {
                 try {
-                    flutterView!!.startPreview(
-                        { result.success(null) },
-                        {
-                            result.error(
-                                "failed_to_start_preview",
-                                it.message,
-                                null
-                            )
-                        })
+                    flutterView!!.startPreview()
+                    result.success(null)
                 } catch (e: Exception) {
                     result.error("failed_to_start_preview", e.message, null)
                 }
@@ -149,13 +123,11 @@ class MethodCallHandlerImpl(
 
                     url.isEmpty() -> result.error("empty_rtmp_url", "RTMP URL is empty", null)
 
-                    else ->
-                        try {
-                            flutterView!!.startStream(url.addTrailingSlashIfNeeded() + streamKey)
-                            result.success(null)
-                        } catch (e: Exception) {
-                            result.error("failed_to_start_stream", e.message, null)
-                        }
+                    else -> flutterView!!.startStream(
+                        url.addTrailingSlashIfNeeded() + streamKey,
+                        result
+                    )
+
                 }
             }
 
@@ -164,10 +136,10 @@ class MethodCallHandlerImpl(
                 result.success(null)
             }
 
-            "getIsStreaming" -> result.success(mapOf("isStreaming" to flutterView!!.isStreaming))
+            "getIsStreaming" -> result.success(mapOf("isStreaming" to flutterView!!.isStreaming()))
             "getCameraPosition" -> {
                 try {
-                    result.success(mapOf("position" to flutterView!!.cameraPosition))
+                    result.success(mapOf("position" to flutterView!!.getCameraFacing().toKey()))
                 } catch (e: Exception) {
                     result.error("failed_to_get_camera_position", e.message, null)
                 }
@@ -181,15 +153,8 @@ class MethodCallHandlerImpl(
                     return
                 }
                 try {
-                    flutterView!!.setCameraPosition(cameraPosition,
-                        { result.success(null) },
-                        {
-                            result.error(
-                                "failed_to_set_camera_position",
-                                it.message,
-                                null
-                            )
-                        })
+                    flutterView!!.setCameraPosition(cameraPosition.toFacing())
+                    result.success(null)
                 } catch (e: Exception) {
                     result.error("failed_to_set_camera_position", e.message, null)
                 }
@@ -197,7 +162,7 @@ class MethodCallHandlerImpl(
 
             "getIsMuted" -> {
                 try {
-                    result.success(mapOf("isMuted" to flutterView!!.isMuted))
+                    result.success(mapOf("isMuted" to flutterView!!.isMuted()))
                 } catch (e: Exception) {
                     result.error("failed_to_get_is_muted", e.message, null)
                 }
@@ -211,7 +176,7 @@ class MethodCallHandlerImpl(
                     return
                 }
                 try {
-                    flutterView!!.isMuted = isMuted
+                    flutterView!!.setIsMuted(isMuted)
                     result.success(null)
                 } catch (e: Exception) {
                     result.error("failed_to_set_is_muted", e.message, null)
@@ -220,7 +185,7 @@ class MethodCallHandlerImpl(
 
             "getVideoSize" -> {
                 try {
-                    val videoSize = flutterView!!.videoConfig.resolution
+                    val videoSize = flutterView!!.getVideoSize()
                     result.success(
                         mapOf(
                             "width" to videoSize.width.toDouble(),
@@ -229,6 +194,23 @@ class MethodCallHandlerImpl(
                     )
                 } catch (e: Exception) {
                     result.error("failed_to_get_video_size", e.message, null)
+                }
+            }
+
+            "setListenToOrientationChange" -> {
+                try {
+                    when (val listenToOrientationChange = call.argument<Boolean>("listenToOrientationChange")) {
+                        null -> result.error(
+                            "missing_listen_to_orientation_change_key", "ListenToOrientationChange key is missing", null
+                        )
+                        else -> {
+                            flutterView!!.setListenToOrientationChange(listenToOrientationChange)
+                            result.success(null)
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    result.error("failed_to_set_listen_to_orientation_change", e.message, null)
                 }
             }
 

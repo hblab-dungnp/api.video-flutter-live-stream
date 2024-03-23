@@ -104,6 +104,15 @@ class ApiVideoMobileLiveStreamPlatform extends ApiVideoLiveStreamPlatform {
     }
   }
 
+  @override
+  Future<void> setListenToOrientationChange(
+      bool listenToOrientationChange) async {
+    return _channel.invokeMethod(
+        'setListenToOrientationChange', <String, dynamic>{
+      'listenToOrientationChange': listenToOrientationChange
+    });
+  }
+
   /// Builds the preview widget.
   @override
   Widget buildPreview(int textureId) {

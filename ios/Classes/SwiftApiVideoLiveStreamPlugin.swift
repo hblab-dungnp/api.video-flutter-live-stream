@@ -157,6 +157,9 @@ public class SwiftApiVideoLiveStreamPlugin: NSObject, FlutterPlugin {
                 return
             }
             result(["width": flutterView.videoConfig.resolution.width, "height": flutterView.videoConfig.resolution.height])
+        case "setListenToOrientationChange":
+            // don't have to do anything here
+            result(nil)
         default:
             result(FlutterMethodNotImplemented)
         }

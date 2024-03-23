@@ -192,6 +192,10 @@ class ApiVideoLiveStreamController {
     return _platform.getVideoSize();
   }
 
+  Future<void> setListenToOrientationChange(bool listenToOrientationChange) {
+    return _platform.setListenToOrientationChange(listenToOrientationChange);
+  }
+
   /// Builds the preview widget.
   @internal
   Widget buildPreview() {

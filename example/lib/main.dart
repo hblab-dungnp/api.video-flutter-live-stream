@@ -59,6 +59,7 @@ class _LiveViewPageState extends State<LiveViewPage>
     _controller = createLiveStreamController();
 
     _controller.initialize().catchError((e) {
+      _controller.setListenToOrientationChange(false);
       showInSnackBar(e.toString());
     });
     super.initState();
@@ -71,9 +72,7 @@ class _LiveViewPageState extends State<LiveViewPage>
       return;
     }
 
-    if (state == AppLifecycleState.inactive) {
-      _controller.stop();
-    } else if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed) {
       _controller.startPreview();
     }
   }
