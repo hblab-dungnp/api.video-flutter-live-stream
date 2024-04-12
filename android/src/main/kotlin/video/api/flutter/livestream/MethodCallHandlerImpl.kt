@@ -42,12 +42,14 @@ class MethodCallHandlerImpl(
     fun stopListening() {
         methodChannel.setMethodCallHandler(null)
         eventChannel.setStreamHandler(null)
+        flutterView?.dispose()
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "create" -> {
                 try {
+                    flutterView?.dispose()
                     flutterView =
                         CameraNativeView(
                             context,

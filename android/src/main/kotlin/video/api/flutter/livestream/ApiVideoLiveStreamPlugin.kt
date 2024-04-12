@@ -26,6 +26,7 @@ class ApiVideoLiveStreamPlugin : FlutterPlugin, ActivityAware {
         methodCallHandlerImpl?.stopListening()
         methodCallHandlerImpl = null
         permissionsManager = null
+        System.gc()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {

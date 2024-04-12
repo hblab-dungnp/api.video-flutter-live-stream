@@ -29,7 +29,7 @@ class CameraNativeView(
     private val onDisconnected: () -> Unit,
 ) : ConnectChecker {
 
-    private final val TAG : String = "CameraNativeView"
+    private final val TAG: String = "CameraNativeView"
 
     /// Mirrors camera.dart
     enum class ResolutionPreset {
@@ -57,6 +57,11 @@ class CameraNativeView(
         if (listenToOrientationChange) {
             sensorRotationManager?.start()
         }
+    }
+
+    fun dispose() {
+        rtmpCamera?.release()
+        flutterTexture.release()
     }
 
     private val flutterTexture = textureRegistry.createSurfaceTexture()
@@ -120,26 +125,28 @@ class CameraNativeView(
     }
 
     fun startPreview() {
-        Log.d(TAG, "startPreview: $preset")
-        try {
-            //check if onPreview
-            if (rtmpCamera?.isOnPreview != true) {
-                Log.i(TAG, "startPreview")
-                if (!prepare())
-                    Log.e(TAG, "prepare failed")
-                val streamingSize = getVideoSize()
-                Log.i(TAG, "currentOrientation $currentOrientation")
-                Log.i(TAG, "streamingSize ${streamingSize.width} ${streamingSize.height}")
-                rtmpCamera?.startPreview(
-                    getSurface(),
-                    streamingSize.width,
-                    streamingSize.height
-                )
+        Log.i(
+            TAG,
+            "startPreview: isOnPreview ${rtmpCamera?.isOnPreview} isRecording ${rtmpCamera?.isRecording} isStreaming ${rtmpCamera?.isStreaming}"
+        )
+
+        //check if onPreview
+        if (rtmpCamera?.isOnPreview != true) {
+            Log.i(TAG, "startPreview")
+            if (!prepare()) {
+                Log.e(TAG, "prepare failed")
+                throw RuntimeException("Prepare failed")
             }
-        } catch (e: CameraAccessException) {
-            Log.e(TAG, "startPreview failed $e")
-            return
+            val streamingSize = getVideoSize()
+            Log.i(TAG, "currentOrientation $currentOrientation")
+            Log.i(TAG, "streamingSize ${streamingSize.width} ${streamingSize.height}")
+            rtmpCamera?.startPreview(
+                getSurface(),
+                streamingSize.width,
+                streamingSize.height
+            )
         }
+
     }
 
     fun stopPreview() {
@@ -147,7 +154,10 @@ class CameraNativeView(
     }
 
     fun startStream(url: String?, result: MethodChannel.Result) {
-        Log.d(TAG, "startVideoStreaming url: $url")
+        Log.i(
+            TAG,
+            "startVideoStreaming: isOnPreview ${rtmpCamera?.isOnPreview} isRecording ${rtmpCamera?.isRecording} isStreaming ${rtmpCamera?.isStreaming}"
+        )
         if (url == null) {
             result.error("startVideoStreaming", "Must specify a url.", null)
             return
@@ -155,7 +165,7 @@ class CameraNativeView(
 
         try {
             if (rtmpCamera?.isStreaming == false) {
-                if (rtmpCamera?.isRecording == true || prepare()) {
+                if (prepare()) {
                     // ready to start streaming
                     rtmpCamera?.startStream(url)
                 } else {
@@ -181,8 +191,8 @@ class CameraNativeView(
         }
     }
 
-    fun setCameraPosition( facing: Facing) {
-        if(getCameraFacing() == facing) return
+    fun setCameraPosition(facing: Facing) {
+        if (getCameraFacing() == facing) return
         when (val source = rtmpCamera?.videoSource) {
             is Camera1Source -> {
                 source.switchCamera()
@@ -225,7 +235,7 @@ class CameraNativeView(
     }
 
     fun setListenToOrientationChange(listenToOrientationChange: Boolean) {
-        if(listenToOrientationChange) {
+        if (listenToOrientationChange) {
             sensorRotationManager?.start()
         } else {
             sensorRotationManager?.stop()
