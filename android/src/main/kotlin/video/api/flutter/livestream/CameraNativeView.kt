@@ -7,12 +7,15 @@ import android.util.Size
 import android.view.Surface
 import android.widget.Toast
 import com.pedro.common.ConnectChecker
+import com.pedro.common.VideoCodec
 import com.pedro.encoder.input.video.CameraHelper.Facing
+import com.pedro.library.generic.GenericStream
 import com.pedro.library.rtmp.RtmpStream
 import com.pedro.library.util.SensorRotationManager
 import com.pedro.library.util.sources.audio.MicrophoneSource
 import com.pedro.library.util.sources.video.Camera1Source
 import com.pedro.library.util.sources.video.Camera2Source
+import com.pedro.library.util.sources.video.VideoSource
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.view.TextureRegistry
 import video.api.flutter.livestream.utils.toResolution
@@ -36,13 +39,14 @@ class CameraNativeView(
         low, medium, high, veryHigh, ultraHigh, max
     }
 
-    private var rtmpCamera: RtmpStream? = null
+    private var rtmpCamera: GenericStream? = null
     private var sensorRotationManager: SensorRotationManager? = null
     private var currentOrientation = -1
     private var prepared = false
 
     init {
-        rtmpCamera = RtmpStream(context, this)
+        rtmpCamera = GenericStream(context, this,  Camera2Source(context), MicrophoneSource())
+        rtmpCamera?.setVideoCodec(VideoCodec.H265)
         sensorRotationManager = SensorRotationManager(context, true) {
             //0 = portrait, 90 = landscape, 180 = reverse portrait, 270 = reverse landscape
             if (currentOrientation != it) {
