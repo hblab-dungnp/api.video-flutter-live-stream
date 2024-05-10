@@ -7,12 +7,15 @@ import android.util.Size
 import android.view.Surface
 import android.widget.Toast
 import com.pedro.common.ConnectChecker
+import com.pedro.common.VideoCodec
 import com.pedro.encoder.input.video.CameraHelper.Facing
+import com.pedro.library.generic.GenericStream
 import com.pedro.library.rtmp.RtmpStream
 import com.pedro.library.util.SensorRotationManager
 import com.pedro.library.util.sources.audio.MicrophoneSource
 import com.pedro.library.util.sources.video.Camera1Source
 import com.pedro.library.util.sources.video.Camera2Source
+import com.pedro.library.util.sources.video.VideoSource
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.view.TextureRegistry
 import video.api.flutter.livestream.utils.toResolution
@@ -24,6 +27,7 @@ class CameraNativeView(
     textureRegistry: TextureRegistry,
     private var listenToOrientationChange: Boolean = false,
     private var preset: ResolutionPreset,
+    private var videoBitRate: Int? = null,
     private var audioBitRate: Int? = null,
     private val onVideoSizeChanged: (Size) -> Unit,
     private val onDisconnected: () -> Unit,
@@ -80,8 +84,9 @@ class CameraNativeView(
         return rtmpCamera?.isStreaming ?: false
     }
 
-    fun setPreset(preset: ResolutionPreset) {
+    fun setPreset(preset: ResolutionPreset, bitrate: Int) {
         this.preset = preset
+        this.videoBitRate = bitrate
         prepared = false
         stopPreview()
         startPreview()
@@ -113,11 +118,11 @@ class CameraNativeView(
             prepared = rtmpCamera!!.prepareVideo(
                 streamingSize.width,
                 streamingSize.height,
-                1200 * 1000
+                videoBitRate ?: 1_200_000
             ) && rtmpCamera!!.prepareAudio(
                 44100,
                 true,
-                audioBitRate ?: (128 * 1000)
+                audioBitRate ?: 128_000
             )
         }
 

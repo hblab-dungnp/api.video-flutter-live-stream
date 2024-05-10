@@ -73,7 +73,8 @@ class MethodCallHandlerImpl(
                     @Suppress("UNCHECKED_CAST")
                     val videoConfig = (call.arguments as Map<String, Any>)
                     val preset = (videoConfig["resolution"] as String).toPreset()
-                    flutterView!!.setPreset(preset)
+                    val bitrate = videoConfig["bitrate"] as Int
+                    flutterView!!.setPreset(preset, bitrate)
                     result.success(null)
                 } catch (e: Exception) {
                     result.error("failed_to_set_video_config", e.message, null)

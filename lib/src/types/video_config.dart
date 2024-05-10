@@ -41,15 +41,15 @@ class VideoConfig {
   static int _getDefaultBitrate(Resolution resolution) {
     switch (resolution) {
       case Resolution.RESOLUTION_240:
-        return 800000;
+        return 93750;
       case Resolution.RESOLUTION_360:
-        return 1000000;
+        return 187500;
       case Resolution.RESOLUTION_480:
-        return 1300000;
+        return 375000;
       case Resolution.RESOLUTION_720:
-        return 2000000;
+        return 750000;
       case Resolution.RESOLUTION_1080:
-        return 3500000;
+        return 1500000;
     }
   }
 }
