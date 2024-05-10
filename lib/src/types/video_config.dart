@@ -49,7 +49,7 @@ class VideoConfig {
       case Resolution.RESOLUTION_720:
         return 750000;
       case Resolution.RESOLUTION_1080:
-        return 1500000;
+        return 800000;
     }
   }
 }
