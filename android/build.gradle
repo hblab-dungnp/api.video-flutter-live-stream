@@ -58,5 +58,5 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     implementation 'androidx.appcompat:appcompat:1.6.1'
 
-    implementation 'com.github.pedroSG94.rtmp-rtsp-stream-client-java:library:2.4.3'
+    implementation 'com.github.pedroSG94.rtmp-rtsp-stream-client-java:library:2.5.1'
 }

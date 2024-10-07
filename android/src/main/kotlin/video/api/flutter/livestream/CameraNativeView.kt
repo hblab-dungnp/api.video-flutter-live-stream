@@ -5,17 +5,13 @@ import android.hardware.camera2.CameraAccessException
 import android.util.Log
 import android.util.Size
 import android.view.Surface
-import android.widget.Toast
 import com.pedro.common.ConnectChecker
-import com.pedro.common.VideoCodec
+import com.pedro.encoder.input.sources.audio.MicrophoneSource
+import com.pedro.encoder.input.sources.video.Camera1Source
+import com.pedro.encoder.input.sources.video.Camera2Source
 import com.pedro.encoder.input.video.CameraHelper.Facing
-import com.pedro.library.generic.GenericStream
 import com.pedro.library.rtmp.RtmpStream
 import com.pedro.library.util.SensorRotationManager
-import com.pedro.library.util.sources.audio.MicrophoneSource
-import com.pedro.library.util.sources.video.Camera1Source
-import com.pedro.library.util.sources.video.Camera2Source
-import com.pedro.library.util.sources.video.VideoSource
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.view.TextureRegistry
 import video.api.flutter.livestream.utils.toResolution
@@ -47,14 +43,15 @@ class CameraNativeView(
 
     init {
         rtmpCamera = RtmpStream(context, this)
-        sensorRotationManager = SensorRotationManager(context, true) {
-            //0 = portrait, 90 = landscape, 180 = reverse portrait, 270 = reverse landscape
-            if (currentOrientation != it) {
-                rtmpCamera?.setOrientation(it)
-                currentOrientation = it
-                val size = preset.toResolution()
-                rtmpCamera?.getGlInterface()
-                    ?.setPreviewResolution(size.width, size.height, it == 0)
+        sensorRotationManager = SensorRotationManager(context, true,true) { rotation, isPortrait ->
+                //0 = portrait, 90 = landscape, 180 = reverse portrait, 270 = reverse landscape
+                if (currentOrientation != rotation) {
+                    rtmpCamera?.setOrientation(rotation)
+                    currentOrientation = rotation
+                    val size = preset.toResolution()
+                    rtmpCamera?.getGlInterface()
+                        ?.setPreviewResolution(size.width, size.height)
+
             }
         }
         rtmpCamera?.setOrientation(0)
